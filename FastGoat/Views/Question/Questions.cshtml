@@ -12,10 +12,9 @@
         <h1>@Model.QuestionGroups[i].GroupTitle</h1>
         @for (int j =0; j < Model.QuestionGroups[i].Questions.Count; j++)
         {
+            //@Html.Partial("Question")
             <p>@Model.QuestionGroups[i].Questions[j].QuestionText</p>
             @Html.TextBoxFor(model => model.QuestionGroups[i].Questions[j].QuestionAnswer)
-
-            //FEATURE IMPLEMENTATION PART 1
         }
     }
     <input type="submit" value="Save" />

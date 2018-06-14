@@ -5,19 +5,35 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using FastGoat.Models;
+using Dapper;
+using Dapper.Contrib.Extensions;
 
 namespace FastGoat.Controllers
 {
     public class QuestionController : Controller
     {
-        [HttpGet]
-        public IActionResult Questions()
+        private readonly IDbConnectionFactory _connectionFactory;
+
+        public QuestionController(IDbConnectionFactory connectionFactory)
         {
-            List<Question> QuestionList1 = new List<Question>
-                            {
-                                new Question{ QuestionText = "QG1 Q1"},
-                                new Question{ QuestionText = "QG1 Q2"}
-                            };
+            _connectionFactory = connectionFactory;
+        }
+
+        [HttpGet("Questions", Name = "questions")]
+        public async Task<IActionResult> Questions()
+        {
+            System.Data.IDbConnection dbConnection = _connectionFactory.Create();
+            dbConnection.Open();
+
+            IEnumerable<DbQuestion> result = await dbConnection.QueryAsync<DbQuestion>("SELECT * FROM dbo.Question WHERE Id = @id", 
+                new { id = 1 } );
+
+            IEnumerable<Question> QuestionList1 = result.Select(x => new Question
+            {
+                QuestionText = x.Text,
+                QuestionAnswer = null
+            });
+            
             List<Question> QuestionList2 = new List<Question>
                             {
                                 new Question{ QuestionText = "QG2 Q1"},
@@ -36,7 +52,7 @@ namespace FastGoat.Controllers
                     {
                         new QuestionGroup
                         {
-                            Questions = QuestionList1,
+                            Questions = QuestionList1.ToList(),
                             GroupTitle = "Lashunta"
                         },
                         new QuestionGroup
@@ -53,12 +69,23 @@ namespace FastGoat.Controllers
             {
                 QuestionGroups = Group1
             };
-            return View(questionnaire);
+
+            return View(questionnaire); //View(questionnaire);
         }
-        [HttpPost]
-        public IActionResult Questions(Questionnaire questionnaire)
+
+        [HttpPost("Questions")]
+        public async Task<IActionResult> Questions(Questionnaire questionnaire)
         {
             return Redirect("../Home");
         }
+    }
+
+    public class DbQuestion
+    {
+        public int Id { get; set; }
+
+        public string Text { get; set; }
+
+        public int Questionnaire { get; set; }
     }
 }
